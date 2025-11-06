@@ -1,0 +1,19 @@
+# 秘密情報
+.env
+
+# 仮想環境（ローカル用）
+.venv/
+
+# Pythonビルド/キャッシュ
+__pycache__/
+*.pyc
+
+# ログや一時ファイル
+data/logs/*
+*.log
+*.tmp
+
+# OS やエディタの不要ファイル
+.DS_Store
+.ipynb_checkpoints/
+.python-version

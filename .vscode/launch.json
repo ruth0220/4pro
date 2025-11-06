@@ -1,0 +1,35 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // A) LangGraph CLI（引数つき）
+      "name": "Run Graph CLI",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/run_graph_cli.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--genre", "盗難",
+        "--style", "北欧ミステリ風",
+        "--time", "早朝",
+        "--place", "図書館",
+        "--suspects", "4",
+        "--clues", "5",
+        "--clue-types", "key,document,fingerprint"
+      ],
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      // B) Chainlit（モジュールとして起動）
+      "name": "Chainlit UI",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "chainlit",
+      "args": ["run", "app/chainlit_app.py", "-w"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}
