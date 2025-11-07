@@ -16,7 +16,6 @@ from graph.specs import GENRES, STYLES, TIMES, PLACES, CLUE_TYPES, parse_clue_ty
 
 import chainlit as cl
 
-
 DEFAULTS = {
     "genre": "密室殺人",
     "style": "アガサクリスティ風",
@@ -128,14 +127,21 @@ async def on_message(msg: cl.Message):
 
     app = build_app()
 
-    # LangGraph のイベントを逐次流して表示
-    async for ev in app.astream_events(state, version="v1"):
-        if ev["event"] == "on_chain_end" and "output" in ev:
-            out = ev["output"]
-            if out.get("history"):
-                last = out["history"][-1]
-                role = last.get("role", "agent")
-                text = last.get("text", "")
+    try:
+        # 1回で走らせて最終stateを取得
+        result = await app.ainvoke(state)
+
+        # すべての発言を順に表示
+        for m in result.get("history", []):
+            role = m.get("role", "agent")
+            text = m.get("text", "")
+            if text:
                 await cl.Message(content=f"**{role}**: {text}").send()
 
-    await cl.Message("完了。別テーマで続ける場合はメッセージを送ってください。").send()
+        await cl.Message("完了。別テーマで続ける場合はメッセージを送ってください。").send()
+
+    except Exception as e:
+        # 失敗時は内容をUIに出す（Renderログと合わせて原因特定しやすく）
+        await cl.Message(content=f"実行中にエラー: {e}").send()
+
+
