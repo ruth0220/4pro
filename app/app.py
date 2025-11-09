@@ -2,6 +2,17 @@
 from pathlib import Path
 import sys
 
+# 役名のラベル（バブル左上に出す名前）
+LABEL = {
+    "casegen": " 事件生成",
+    "detectiveA": "探偵A（論理）",
+    "detectiveB": " 探偵B（直感）",
+    "detectiveC": " 探偵C（心理）",
+    "facilitator": "進行（ファシリ）",
+    "judge": "⚖️ 判定（ジャッジ）",
+}
+
+
 # 1) プロジェクトルートを import パスに追加
 ROOT = Path(__file__).resolve().parents[1]  # .../multi_agent
 sys.path.insert(0, str(ROOT))
@@ -97,31 +108,20 @@ async def on_start():
     ).send()
 
 @cl.on_message
-async def on_message(msg: cl.Message):
-    theme, overrides = parse_overrides(msg.content)
-
-    # 初期stateを組み立て（未指定はデフォルト）
-    state = {
-        "request": theme,
-        "genre": overrides.get("genre", DEFAULTS["genre"]),
-        "style": overrides.get("style", DEFAULTS["style"]),
-        "time": overrides.get("time", DEFAULTS["time"]),
-        "place": overrides.get("place", DEFAULTS["place"]),
-        "suspects": overrides.get("suspects", DEFAULTS["suspects"]),
-        "clues": overrides.get("clues", DEFAULTS["clues"]),
-        "clue_types": overrides.get("clue_types", DEFAULTS["clue_types"]),
-        "history": [],
-        "max_rounds": overrides.get("max_rounds", DEFAULTS["max_rounds"]),
-    }
+async def on_start():
+    # ← この3行を on_start の先頭に追加（URLは仮のプレースホルダーでOK）
+    cl.Avatar(name="📜 事件生成", url="https://i.imgur.com/0Z8FQ5L.png")
+    cl.Avatar(name="🕵️ 探偵A（論理）", url="https://i.imgur.com/0Z8FQ5L.png")
+    cl.Avatar(name="🧠 探偵B（直感）", url="https://i.imgur.com/0Z8FQ5L.png")
+    cl.Avatar(name="🗣️ 探偵C（心理）", url="https://i.imgur.com/0Z8FQ5L.png")
+    cl.Avatar(name="🧭 進行（ファシリ）", url="https://i.imgur.com/0Z8FQ5L.png")
+    cl.Avatar(name="⚖️ 判定（ジャッジ）", url="https://i.imgur.com/0Z8FQ5L.png")
 
     await cl.Message(
         content=(
-            f"**事件テーマ**: {state['request']}\n"
-            f"- ジャンル: {state['genre']} / 作風: {state['style']}\n"
-            f"- 時間: {state['time']} / 場所: {state['place']}\n"
-            f"- 容疑者数: {state['suspects']} / 証拠数: {state['clues']} / 証拠タイプ: {', '.join(state['clue_types'])}\n"
-            f"- ラウンド上限: {state['max_rounds']}\n\n"
-            "→ 生成を開始します。"
+            "事件のテーマを入力してください。\n\n"
+            + HELP +
+            "\n\n例）大学での盗難 genre=盗難 style=北欧ミステリ風 time=早朝 place=図書館 suspects=4 clues=5 clue_types=key,document,fingerprint"
         )
     ).send()
 
@@ -142,13 +142,14 @@ async def on_message(msg: cl.Message):
         }
 
         # ainvoke の直後にこれを使う
+        # ここを差し替え（on_message 内、result = await app.ainvoke(state) の直後）
         for m in result.get("history", []):
             text = (m.get("text") or "").strip()
             role = m.get("role", "agent")
             if text:
                 await cl.Message(
                     content=text,
-                    author=ROLE_NAME.get(role, role)  # ← 役名を author に渡す
+                    author=LABEL.get(role, role)  # ← 本文に役名を書かず、author に渡す
                 ).send()
 
 
