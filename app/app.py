@@ -131,12 +131,26 @@ async def on_message(msg: cl.Message):
         # 1回で走らせて最終stateを取得
         result = await app.ainvoke(state)
 
-        # すべての発言を順に表示
+        # 役名の表示名（バブルのラベル）
+        ROLE_NAME = {
+            "casegen": "事件生成",
+            "detectiveA": "探偵A（論理）",
+            "detectiveB": "探偵B（直感）",
+            "detectiveC": "探偵C（心理）",
+            "facilitator": "進行（ファシリ）",
+            "judge": "判定（ジャッジ）",
+        }
+
+        # ainvoke の直後にこれを使う
         for m in result.get("history", []):
+            text = (m.get("text") or "").strip()
             role = m.get("role", "agent")
-            text = m.get("text", "")
             if text:
-                await cl.Message(content=f"**{role}**: {text}").send()
+                await cl.Message(
+                    content=text,
+                    author=ROLE_NAME.get(role, role)  # ← 役名を author に渡す
+                ).send()
+
 
         await cl.Message("完了。別テーマで続ける場合はメッセージを送ってください。").send()
 
