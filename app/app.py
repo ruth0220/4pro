@@ -3,25 +3,16 @@ from pathlib import Path
 import sys
 
 LABEL = {
-    "casegen": "📜 事件生成",
-    "detectiveA": "🕵️ 探偵A（論理）",
-    "detectiveB": "🧠 探偵B（直感）",
-    "detectiveC": "🗣️ 探偵C（心理）",
-    "facilitator": "🧭 進行（ファシリ）",
+    "casegen": "事件生成",
+    "detectiveA": " 探偵A",
+    "detectiveB": " 探偵B",
+    "detectiveC": " 探偵C",
+    "facilitator": " 進行（ファシリ）",
     "judge": "⚖️ 判定（ジャッジ）",
 }
 
-AVATAR = {
-    "casegen": "https://i.imgur.com/0Z8FQ5L.png",
-    "detectiveA": "https://i.imgur.com/0Z8FQ5L.png",
-    "detectiveB": "https://i.imgur.com/0Z8FQ5L.png",
-    "detectiveC": "https://i.imgur.com/0Z8FQ5L.png",
-    "facilitator": "https://i.imgur.com/0Z8FQ5L.png",
-    "judge": "https://i.imgur.com/0Z8FQ5L.png",
-}
-
 # 1) プロジェクトルートを import パスに追加
-ROOT = Path(__file__).resolve().parents[1]  # .../multi_agent
+ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 # 2) .env を絶対パスで読む
@@ -106,7 +97,6 @@ def parse_overrides(msg: str) -> tuple[str, dict]:
 
 @cl.on_chat_start
 async def on_chat_start():
-    # ❌ cl.Avatar(...) の6行は削除（この版では未実装のためエラー）
     await cl.Message(
         content=("事件のテーマを入力してください。\n\n" + HELP +
                  "\n\n例）大学での盗難 genre=盗難 style=北欧ミステリ風 time=早朝 place=図書館 suspects=4 clues=5 clue_types=key,document,fingerprint")
@@ -155,8 +145,7 @@ async def on_message(msg: cl.Message):
             if text:
                 await cl.Message(
                     content=text,
-                    author=LABEL.get(role, role),
-                    avatar=AVATAR.get(role)   # ← ここでアイコンを指定
+                    author=LABEL.get(role, role)  # ← author だけ渡す
                 ).send()
 
         await cl.Message("完了。別テーマで続ける場合はメッセージを送ってください。").send()
