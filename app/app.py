@@ -1,27 +1,26 @@
 # app/app.py  ← ファイルの先頭にそのまま貼り替え
 from pathlib import Path
 import sys
-
 LABEL = {
     "casegen": "事件生成",
-    "detectiveA": " 探偵A",
-    "detectiveB": " 探偵B",
-    "detectiveC": " 探偵C",
-    "facilitator": " 進行（ファシリ）",
-    "judge": "⚖️ 判定（ジャッジ）",
+    "detectiveA": "探偵A",
+    "detectiveB": "探偵B",
+    "detectiveC": "探偵C",
+    "facilitator": "進行（ファシリ）",
+    "judge": "判定（ジャッジ）",
 }
 
 # 1) プロジェクトルートを import パスに追加
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-# 2) .env を絶対パスで読む
+# 2) .env を絶対パスで読む、APIキーとか
 from dotenv import load_dotenv
 load_dotenv(ROOT / ".env")
 
 # 3) ここからプロジェクト内モジュールをimport
 from graph.build import build_app
-from graph.specs import GENRES, STYLES, TIMES, PLACES, CLUE_TYPES, parse_clue_types
+from graph.specs import GENRES, STYLES, TIMES, PLACES, CLUE_TYPES, parse_clue_types#これらの文字列を配列にする
 
 import chainlit as cl
 
@@ -51,6 +50,7 @@ HELP = f"""\
 - suspects, clues, max_rounds は整数
 """
 
+#ユーザのメッセージを受け取る。suspects/clues/max_rounds は 整数に、genre/style/time/place は 候補外の値ならデフォルトへ、clue_types は カンマ区切りを配列に
 def parse_overrides(msg: str) -> tuple[str, dict]:
     """
     ユーザー入力から (テーマ, オプション辞書) を抽出。
@@ -102,7 +102,7 @@ async def on_chat_start():
                  "\n\n例）大学での盗難 genre=盗難 style=北欧ミステリ風 time=早朝 place=図書館 suspects=4 clues=5 clue_types=key,document,fingerprint")
     ).send()
 
-
+#ユーザがメッセージを送ると開始する
 @cl.on_message
 async def on_message(msg: cl.Message):
     # 1) 入力を解析
@@ -134,11 +134,12 @@ async def on_message(msg: cl.Message):
         )
     ).send()
 
-    # 4) 実行して出力（author + avatar で“誰の発言か”を明確に）
+    # 4)最終結果を表示
     app = build_app()
     try:
         result = await app.ainvoke(state)
 
+        #発言ログを一括表示
         for m in result.get("history", []):
             text = (m.get("text") or "").strip()
             role = m.get("role", "agent")
