@@ -1,6 +1,8 @@
 # app/app.py  ← ファイルの先頭にそのまま貼り替え
 from pathlib import Path
 import sys
+from dotenv import load_dotenv
+import chainlit as cl
 LABEL = {
     "casegen": "事件生成",
     "detectiveA": "探偵A",
@@ -10,19 +12,16 @@ LABEL = {
     "judge": "判定（ジャッジ）",
 }
 
-# 1) プロジェクトルートを import パスに追加
+#プロジェクトルートを import パスに追加
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-# 2) .env を絶対パスで読む、APIキーとか
-from dotenv import load_dotenv
+#.env を絶対パスで読む、APIキーとか
 load_dotenv(ROOT / ".env")
 
-# 3) ここからプロジェクト内モジュールをimport
+#ここからプロジェクト内モジュールをimport
 from graph.build import build_app
 from graph.specs import GENRES, STYLES, TIMES, PLACES, CLUE_TYPES, parse_clue_types#これらの文字列を配列にする
-
-import chainlit as cl
 
 DEFAULTS = {
     "genre": "密室殺人",
@@ -143,11 +142,14 @@ async def on_message(msg: cl.Message):
         for m in result.get("history", []):
             text = (m.get("text") or "").strip()
             role = m.get("role", "agent")
-            if text:
-                await cl.Message(
-                    content=text,
-                    author=LABEL.get(role, role)  # ← author だけ渡す
-                ).send()
+            if not text:
+                continue
+
+            name = LABEL.get(role, role)
+            await cl.Message(
+                content=f"**{name}**\n\n{text}"
+            ).send()
+
 
         await cl.Message("完了。別テーマで続ける場合はメッセージを送ってください。").send()
 
