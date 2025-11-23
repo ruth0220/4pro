@@ -155,23 +155,30 @@ async def on_message(msg: cl.Message):
     try:
         result = await app.ainvoke(state)
 
-        #発言ログを一括表示
+        # 発言ログを一括表示
         for m in result.get("history", []):
             text = (m.get("text") or "").strip()
             role = m.get("role", "agent")
             if not text:
                 continue
 
-            name = AVATARS.get(role, role)
-            await cl.Message(
-                content=text,         # ← content に名前を入れず、author に入れる
-                author=name,
-            ).send()
+            # 画像パス（public 配下を想定）
+            img = AVATARS.get(role, "")
+            if img:
+                md_icon = f"![icon]({img})\n\n"   # ← 画像を表示
+            else:
+                md_icon = ""
 
+            name = LABEL.get(role, role)
+
+            await cl.Message(
+                content=f"{md_icon}**{name}**\n\n{text}"
+            ).send()
 
         await cl.Message("完了。別テーマで続ける場合はメッセージを送ってください。").send()
 
     except Exception as e:
         await cl.Message(content=f"実行中にエラー: {e}").send()
+
 
 
