@@ -4,6 +4,29 @@ import sys
 from dotenv import load_dotenv
 import chainlit as cl
 
+
+@cl.on_chat_start
+async def on_chat_start():
+    cl.Avatar(name="事件生成", path=str(ROOT / "computer_ai_chip.png"))
+    cl.Avatar(name="探偵A", path=str(ROOT / "figure_aisatsu_akusyu_kyousyu.png"))
+    cl.Avatar(name="探偵B", path=str(ROOT / "tantei_man.png"))
+    cl.Avatar(name="探偵C", path=str(ROOT / "tantei_man.png"))
+    cl.Avatar(name="進行（ファシリ）", path=str(ROOT / "tantei_woman.png"))
+    cl.Avatar(name="判定（ジャッジ）", path=str(ROOT / "judge.png"))
+
+    await cl.Message(content="事件テーマを入力してください…").send()
+
+
+LABEL = {
+    "casegen": "事件生成",
+    "detectiveA": "探偵A",
+    "detectiveB": "探偵B",
+    "detectiveC": "探偵C",
+    "facilitator": "進行（ファシリ）",
+    "judge": "判定（ジャッジ）",
+}
+
+
 #プロジェクトルートを import パスに追加
 ROOT = Path(__file__).resolve().parents[1]
 AVATARS = {
@@ -94,12 +117,6 @@ def parse_overrides(msg: str) -> tuple[str, dict]:
 
     return theme, opts
 
-@cl.on_chat_start
-async def on_chat_start():
-    await cl.Message(
-        content=("事件のテーマを入力してください。\n\n" + HELP +
-                 "\n\n例）大学での盗難 genre=盗難 style=北欧ミステリ風 time=早朝 place=図書館 suspects=4 clues=5 clue_types=key,document,fingerprint")
-    ).send()
 
 #ユーザがメッセージを送ると開始する
 @cl.on_message
@@ -149,7 +166,6 @@ async def on_message(msg: cl.Message):
             await cl.Message(
                 content=text,         # ← content に名前を入れず、author に入れる
                 author=name,
-                avatar=AVATARS.get(role)
             ).send()
 
 
