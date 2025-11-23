@@ -4,19 +4,6 @@ import sys
 from dotenv import load_dotenv
 import chainlit as cl
 
-
-@cl.on_chat_start
-async def on_chat_start():
-    cl.Avatar(name="事件生成", path=str(ROOT / "computer_ai_chip.png"))
-    cl.Avatar(name="探偵A", path=str(ROOT / "figure_aisatsu_akusyu_kyousyu.png"))
-    cl.Avatar(name="探偵B", path=str(ROOT / "tantei_man.png"))
-    cl.Avatar(name="探偵C", path=str(ROOT / "tantei_man.png"))
-    cl.Avatar(name="進行（ファシリ）", path=str(ROOT / "tantei_woman.png"))
-    cl.Avatar(name="判定（ジャッジ）", path=str(ROOT / "judge.png"))
-
-    await cl.Message(content="事件テーマを入力してください…").send()
-
-
 LABEL = {
     "casegen": "事件生成",
     "detectiveA": "探偵A",
@@ -26,9 +13,24 @@ LABEL = {
     "judge": "判定（ジャッジ）",
 }
 
-
 #プロジェクトルートを import パスに追加
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+#.env を絶対パスで読む、APIキーとか
+load_dotenv(ROOT / ".env")
+
+@cl.on_chat_start
+async def on_chat_start():
+    # ここでは単に初期メッセージだけを出す
+    await cl.Message(
+        content=(
+            "事件のテーマを入力してください。\n\n" + HELP +
+            "\n\n例）大学での盗難 genre=盗難 style=北欧ミステリ風 time=早朝 "
+            "place=図書館 suspects=4 clues=5 clue_types=key,document,fingerprint"
+        )
+    ).send()
+
 AVATARS = {
     "casegen": str(ROOT / "computer_ai_chip.png"),
     "detectiveA": str(ROOT / "figure_aisatsu_akusyu_kyousyu.png"),
@@ -37,12 +39,6 @@ AVATARS = {
     "facilitator": str(ROOT / "tantei_woman.png"),
     "judge": "判定（ジャッジ）",
 }
-
-
-sys.path.insert(0, str(ROOT))
-
-#.env を絶対パスで読む、APIキーとか
-load_dotenv(ROOT / ".env")
 
 #ここからプロジェクト内モジュールをimport
 from graph.build import build_app
