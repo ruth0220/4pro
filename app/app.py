@@ -1,9 +1,19 @@
-# app/app.py  
+# app/app.py
 from pathlib import Path
 import sys
 from dotenv import load_dotenv
 import chainlit as cl
 
+# ==== パス & 環境変数の設定 ====
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+load_dotenv(ROOT / ".env")
+
+# ==== プロジェクト内モジュール ====
+from graph.build import build_app
+from graph.specs import GENRES, STYLES, TIMES, PLACES, CLUE_TYPES, parse_clue_types
+
+# ==== ラベル（役名） ====
 LABEL = {
     "casegen": "事件生成",
     "detectiveA": "探偵A",
@@ -13,37 +23,19 @@ LABEL = {
     "judge": "判定（ジャッジ）",
 }
 
-#プロジェクトルートを import パスに追加
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-
-#.env を絶対パスで読む、APIキーとか
-load_dotenv(ROOT / ".env")
-
-@cl.on_chat_start
-async def on_chat_start():
-    # ここでは単に初期メッセージだけを出す
-    await cl.Message(
-        content=(
-            "事件のテーマを入力してください。\n\n" + HELP +
-            "\n\n例）大学での盗難 genre=盗難 style=北欧ミステリ風 time=早朝 "
-            "place=図書館 suspects=4 clues=5 clue_types=key,document,fingerprint"
-        )
-    ).send()
-
+# ==== アイコン画像（Markdown 用パス）====
+# ひとまずルート直下のファイル名としておく
+# （後で public/ などに整理してもOK）
 AVATARS = {
-    "casegen": str(ROOT / "computer_ai_chip.png"),
-    "detectiveA": str(ROOT / "figure_aisatsu_akusyu_kyousyu.png"),
-    "detectiveB": str(ROOT / "tantei_man.png"),
-    "detectiveC": str(ROOT / "tantei_man.png"),
-    "facilitator": str(ROOT / "tantei_woman.png"),
-    "judge": "判定（ジャッジ）",
+    "casegen": "computer_ai_chip.png",
+    "detectiveA": "figure_aisatsu_akusyu_kyousyu.png",
+    "detectiveB": "tantei_man.png",
+    "detectiveC": "tantei_man.png",
+    "facilitator": "tantei_woman.png",
+    "judge": "judge.png",
 }
 
-#ここからプロジェクト内モジュールをimport
-from graph.build import build_app
-from graph.specs import GENRES, STYLES, TIMES, PLACES, CLUE_TYPES, parse_clue_types#これらの文字列を配列にする
-
+# ==== デフォルト値 ====
 DEFAULTS = {
     "genre": "密室殺人",
     "style": "アガサクリスティ風",
@@ -70,13 +62,13 @@ HELP = f"""\
 - suspects, clues, max_rounds は整数
 """
 
-#ユーザのメッセージを受け取る。suspects/clues/max_rounds は 整数に、genre/style/time/place は 候補外の値ならデフォルトへ、clue_types は カンマ区切りを配列に
+# ==== ユーザー入力のパース ====
 def parse_overrides(msg: str) -> tuple[str, dict]:
     """ユーザー入力から (テーマ, オプション辞書) を抽出。
     形式: <自由文> [key=value]..."""
     parts = msg.strip().split()
-    opts = {}
-    free_tokens = []
+    opts: dict = {}
+    free_tokens: list[str] = []
     for p in parts:
         if "=" in p:
             k, v = p.split("=", 1)
@@ -85,17 +77,27 @@ def parse_overrides(msg: str) -> tuple[str, dict]:
             opts[k] = v
         else:
             free_tokens.append(p)
+
     theme = " ".join(free_tokens) if free_tokens else "大学で起きた事件"
+
     # 型・候補の正規化
     if "suspects" in opts:
-        try: opts["suspects"] = int(opts["suspects"])
-        except: opts["suspects"] = DEFAULTS["suspects"]
+        try:
+            opts["suspects"] = int(opts["suspects"])
+        except Exception:
+            opts["suspects"] = DEFAULTS["suspects"]
+
     if "clues" in opts:
-        try: opts["clues"] = int(opts["clues"])
-        except: opts["clues"] = DEFAULTS["clues"]
+        try:
+            opts["clues"] = int(opts["clues"])
+        except Exception:
+            opts["clues"] = DEFAULTS["clues"]
+
     if "max_rounds" in opts:
-        try: opts["max_rounds"] = int(opts["max_rounds"])
-        except: opts["max_rounds"] = DEFAULTS["max_rounds"]
+        try:
+            opts["max_rounds"] = int(opts["max_rounds"])
+        except Exception:
+            opts["max_rounds"] = DEFAULTS["max_rounds"]
 
     if "genre" in opts and opts["genre"] not in GENRES:
         opts["genre"] = DEFAULTS["genre"]
@@ -114,7 +116,19 @@ def parse_overrides(msg: str) -> tuple[str, dict]:
     return theme, opts
 
 
-#ユーザがメッセージを送ると開始する
+# ==== チャット開始時 ====
+@cl.on_chat_start
+async def on_chat_start():
+    await cl.Message(
+        content=(
+            "事件のテーマを入力してください。\n\n" + HELP +
+            "\n\n例）大学での盗難 genre=盗難 style=北欧ミステリ風 time=早朝 "
+            "place=図書館 suspects=4 clues=5 clue_types=key,document,fingerprint"
+        )
+    ).send()
+
+
+# ==== メインメッセージハンドラ ====
 @cl.on_message
 async def on_message(msg: cl.Message):
     # 1) 入力を解析
@@ -140,7 +154,8 @@ async def on_message(msg: cl.Message):
             f"**事件テーマ**: {state['request']}\n"
             f"- ジャンル: {state['genre']} / 作風: {state['style']}\n"
             f"- 時間: {state['time']} / 場所: {state['place']}\n"
-            f"- 容疑者数: {state['suspects']} / 証拠数: {state['clues']} / 証拠タイプ: {', '.join(state['clue_types'])}\n"
+            f"- 容疑者数: {state['suspects']} / 証拠数: {state['clues']} / "
+            f"証拠タイプ: {', '.join(state['clue_types'])}\n"
             f"- ラウンド上限: {state['max_rounds']}\n\n"
             "→ 生成を開始します。"
         )
@@ -158,10 +173,10 @@ async def on_message(msg: cl.Message):
             if not text:
                 continue
 
-            # 画像パス（public 配下を想定）
+            # 画像パス（Markdown 用）
             img = AVATARS.get(role, "")
             if img:
-                md_icon = f"![icon]({img})\n\n"   # ← 画像を表示
+                md_icon = f"![icon]({img})\n\n"
             else:
                 md_icon = ""
 
@@ -175,6 +190,7 @@ async def on_message(msg: cl.Message):
 
     except Exception as e:
         await cl.Message(content=f"実行中にエラー: {e}").send()
+
 
 
 
