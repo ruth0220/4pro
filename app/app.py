@@ -1,19 +1,21 @@
-# app/app.py  ← ファイルの先頭にそのまま貼り替え
+# app/app.py  
 from pathlib import Path
 import sys
 from dotenv import load_dotenv
 import chainlit as cl
-LABEL = {
-    "casegen": "事件生成",
-    "detectiveA": "探偵A",
-    "detectiveB": "探偵B",
-    "detectiveC": "探偵C",
-    "facilitator": "進行（ファシリ）",
-    "judge": "判定（ジャッジ）",
-}
 
 #プロジェクトルートを import パスに追加
 ROOT = Path(__file__).resolve().parents[1]
+AVATARS = {
+    "casegen": str(ROOT / "computer_ai_chip.png"),
+    "detectiveA": str(ROOT / "figure_aisatsu_akusyu_kyousyu.png"),
+    "detectiveB": str(ROOT / "tantei_man.png"),
+    "detectiveC": str(ROOT / "tantei_man.png"),
+    "facilitator": str(ROOT / "tantei_woman.png"),
+    "judge": "判定（ジャッジ）",
+}
+
+
 sys.path.insert(0, str(ROOT))
 
 #.env を絶対パスで読む、APIキーとか
@@ -51,10 +53,8 @@ HELP = f"""\
 
 #ユーザのメッセージを受け取る。suspects/clues/max_rounds は 整数に、genre/style/time/place は 候補外の値ならデフォルトへ、clue_types は カンマ区切りを配列に
 def parse_overrides(msg: str) -> tuple[str, dict]:
-    """
-    ユーザー入力から (テーマ, オプション辞書) を抽出。
-    形式: <自由文> [key=value]...
-    """
+    """ユーザー入力から (テーマ, オプション辞書) を抽出。
+    形式: <自由文> [key=value]..."""
     parts = msg.strip().split()
     opts = {}
     free_tokens = []
@@ -145,9 +145,11 @@ async def on_message(msg: cl.Message):
             if not text:
                 continue
 
-            name = LABEL.get(role, role)
+            name = AVATARS.get(role, role)
             await cl.Message(
-                content=f"**{name}**\n\n{text}"
+                content=text,         # ← content に名前を入れず、author に入れる
+                author=name,
+                avatar=AVATARS.get(role)
             ).send()
 
 
