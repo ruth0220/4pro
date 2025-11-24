@@ -4,16 +4,14 @@ import sys
 from dotenv import load_dotenv
 import chainlit as cl
 
-# ==== パス & 環境変数の設定 ====
+#パス 、環境変数の設定
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 load_dotenv(ROOT / ".env")
 
-# ==== プロジェクト内モジュール ====
 from graph.build import build_app
 from graph.specs import GENRES, STYLES, TIMES, PLACES, CLUE_TYPES, parse_clue_types
 
-# ==== ラベル（役名） ====
 LABEL = {
     "casegen": "事件生成",
     "detectiveA": "探偵A",
@@ -23,19 +21,17 @@ LABEL = {
     "judge": "判定（ジャッジ）",
 }
 
-# ==== アイコン画像（Markdown 用パス）====
-# ひとまずルート直下のファイル名としておく
-# （後で public/ などに整理してもOK）
+#アイコン画像
+# ルート直下のファイル名
 AVATARS = {
-    "casegen": "computer_ai_chip.png",
-    "detectiveA": "figure_aisatsu_akusyu_kyousyu.png",
-    "detectiveB": "tantei_man.png",
-    "detectiveC": "tantei_man.png",
-    "facilitator": "tantei_woman.png",
-    "judge": "judge.png",
+    "casegen": "/avatars/computer_ai_chip.png",
+    "detectiveA": "/avatars/figure_aisatsu_akusyu_kyousyu.png",
+    "detectiveB": "/avatars/tantei_man.png",
+    "detectiveC": "/avatars/tantei_man.png",
+    "facilitator": "/avatars/tantei_woman.png",
+    "judge": "/avatars/judge.png",
 }
 
-# ==== デフォルト値 ====
 DEFAULTS = {
     "genre": "密室殺人",
     "style": "アガサクリスティ風",
@@ -62,7 +58,7 @@ HELP = f"""\
 - suspects, clues, max_rounds は整数
 """
 
-# ==== ユーザー入力のパース ====
+#ユーザー入力のパース 
 def parse_overrides(msg: str) -> tuple[str, dict]:
     """ユーザー入力から (テーマ, オプション辞書) を抽出。
     形式: <自由文> [key=value]..."""
@@ -116,7 +112,7 @@ def parse_overrides(msg: str) -> tuple[str, dict]:
     return theme, opts
 
 
-# ==== チャット開始時 ====
+#チャット開始時
 @cl.on_chat_start
 async def on_chat_start():
     await cl.Message(
@@ -127,14 +123,13 @@ async def on_chat_start():
         )
     ).send()
 
-
-# ==== メインメッセージハンドラ ====
+#メインメッセージハンドラ 
 @cl.on_message
 async def on_message(msg: cl.Message):
     # 1) 入力を解析
     theme, overrides = parse_overrides(msg.content)
 
-    # 2) 初期 state（未指定はデフォルト）
+    # 2) 初期state
     state = {
         "request": theme,
         "genre": overrides.get("genre", DEFAULTS["genre"]),
@@ -173,7 +168,7 @@ async def on_message(msg: cl.Message):
             if not text:
                 continue
 
-            # 画像パス（Markdown 用）
+            # 画像パス（Markdown用）
             img = AVATARS.get(role, "")
             if img:
                 md_icon = f"![icon]({img})\n\n"
